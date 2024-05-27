@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Trimmer</title>
+    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+</head>
+<body>
+    <h1>Video Trimmer</h1>
+    <input type="file" id="video-file">
+    <br>
+    <label for="start-time">Start Time:</label>
+    <input type="text" id="start-time" value="00:00:00">
+    <br>
+    <label for="end-time">End Time:</label>
+    <input type="text" id="end-time" value="00:01:00">
+    <br>
+    <button id="trim-button">Trim Video</button>
+    <video id="trimmed-video" controls></video>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            const videoFileInput = document.getElementById('video-file');
+            const trimmedVideo = document.getElementById('trimmed-video');
+
+            async function trimVideo() {
+                const file = videoFileInput.files[0];
+                const startTime = document.getElementById('start-time').value;
+                const endTime = document.getElementById('end-time').value;
+
+                if (!file) {
+                    alert('Please select a video file.');
+                    return;
+                }
+
+                const { createFFmpeg, fetchFile } = FFmpeg;
+                const ffmpeg = createFFmpeg({ log: true });
+                await ffmpeg.load();
+
+                ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(file));
+
+                await ffmpeg.run('-i', 'input.mp4', '-ss', startTime, '-to', endTime, '-c', 'copy', 'output.mp4');
+
+                const data = ffmpeg.FS('readFile', 'output.mp4');
+                const trimmedBlob = new Blob([data.buffer], { type: 'video/mp4' });
+                const trimmedVideoUrl = URL.createObjectURL(trimmedBlob);
+
+                trimmedVideo.src = trimmedVideoUrl;
+            }
+
+            document.getElementById('trim-button').addEventListener('click', trimVideo);
+        });
+    </script>
+</body>
+</html>
